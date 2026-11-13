@@ -746,16 +746,21 @@ export function createRichComposer(opts = {}) {
 
   editor.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter' || e.isComposing) return;
-    if (e.shiftKey) {
-      // Shift+Enter is a soft newline; inside a list that means the next item.
-      if (inListItem()) {
+    const sendShortcut = e.ctrlKey || e.metaKey;
+    // Inside a list, Enter has to build the list, so it can't also send. The
+    // browser's own Enter starts the next item and, on an empty item, leaves
+    // the list. Ctrl/Cmd+Enter (or the Send button) sends instead.
+    if (inListItem() && !sendShortcut) {
+      if (e.shiftKey) {
         e.preventDefault();
         document.execCommand('insertParagraph', false, null);
         syncToolbarState();
         handleChange();
       }
-      return; // outside a list, let the browser drop in its <br>
+      return;
     }
+    // Outside a list, Shift+Enter is a soft newline (the browser drops in its <br>).
+    if (e.shiftKey && !sendShortcut) return;
     e.preventDefault();
     onSubmit();
   });
